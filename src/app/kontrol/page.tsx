@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useEffect } from "react";
 import { ALLERGENS } from "@/lib/allergens";
 import { ET_KOKENLERI } from "@/lib/meat";
-import { alerjenTespitEt, incelemeGerekiyorMu } from "@/lib/detect";
+import { incelemeGerekiyorMu } from "@/lib/detect";
 import { AlerjenRozeti } from "@/components/alerjen-rozeti";
 import { Bolum } from "@/components/bolum";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { createClient } from "@/lib/supabase/client";
 
 const ORNEK_RECETE = `500 g buğday unu
 200 ml süt
@@ -19,25 +20,85 @@ const ORNEK_RECETE = `500 g buğday unu
 
 export default function KontrolSayfasi() {
   const [recete, setRecete] = useState("");
+  const [sonuc, setSonuc] = useState<any | null>(null);
+  const [yukleniyor, setYukleniyor] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
+  const [kalanKredi, setKalanKredi] = useState<number | null>(null);
 
-  const sonuc = useMemo(() => alerjenTespitEt(recete), [recete]);
+  useEffect(() => {
+    async function fetchKredi() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("kredi_bakiyeleri")
+          .select("bakiye")
+          .eq("kullanici_id", user.id)
+          .single();
+        if (data) {
+          setKalanKredi(data.bakiye);
+        }
+      }
+    }
+    fetchKredi();
+  }, []);
+
+  async function analizEt() {
+    if (recete.trim().length === 0) return;
+    
+    setYukleniyor(true);
+    setHata(null);
+    setSonuc(null);
+
+    try {
+      const res = await fetch("/api/analiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recete }),
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setHata(data.hata || "Analiz sırasında bir hata oluştu.");
+      } else {
+        setSonuc(data.sonuc);
+        setKalanKredi(data.yeniBakiye);
+        
+        // Custom event for SiteHeader to update its own credit display if they listen
+        window.dispatchEvent(new Event("kredi_guncellendi"));
+      }
+    } catch (err) {
+      setHata("Sunucu ile bağlantı kurulamadı.");
+    } finally {
+      setYukleniyor(false);
+    }
+  }
+
   const bosMu = recete.trim().length === 0;
-  const inceleme = incelemeGerekiyorMu(sonuc);
-  const acikNoktaSayisi = sonuc.belirsiz.length + sonuc.taninmayan.length;
+  const inceleme = sonuc ? incelemeGerekiyorMu(sonuc) : false;
+  const acikNoktaSayisi = sonuc ? sonuc.belirsiz.length + sonuc.taninmayan.length : 0;
 
   return (
     <div className="min-h-full">
       <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <section className="mb-10 max-w-2xl">
-          <h1 className="font-display text-3xl tracking-tight text-murekkep sm:text-4xl">
-            Reçete kontrolü
-          </h1>
-          <p className="mt-2 text-zeytin-acik">
-            Her bulgunun hangi içerikten geldiğini gösteririz. Emin olmadığımız
-            yerde tahmin yürütmez, size sorarız.
-          </p>
+        <section className="mb-10 max-w-2xl flex flex-col items-start gap-4">
+          <div>
+            <h1 className="font-display text-3xl tracking-tight text-murekkep sm:text-4xl">
+              Reçete kontrolü
+            </h1>
+            <p className="mt-2 text-zeytin-acik">
+              Her bulgunun hangi içerikten geldiğini gösteririz. Emin olmadığımız
+              yerde tahmin yürütmez, size sorarız.
+            </p>
+          </div>
+          {kalanKredi !== null && (
+            <div className="inline-flex items-center gap-2 rounded-full border border-zeytin/20 bg-zeytin/5 px-3 py-1.5 text-sm font-medium text-zeytin">
+              <span>Kalan kredi:</span>
+              <span className="font-mono text-biber">{kalanKredi}</span>
+            </div>
+          )}
         </section>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start">
@@ -61,27 +122,59 @@ export default function KontrolSayfasi() {
               <textarea
                 id="recete"
                 value={recete}
-                onChange={(olay) => setRecete(olay.target.value)}
+                onChange={(olay) => {
+                  setRecete(olay.target.value);
+                  setSonuc(null);
+                }}
                 rows={14}
                 spellCheck={false}
                 placeholder={"500 g buğday unu\n200 ml süt\n3 yumurta"}
                 className="w-full resize-none rounded-lg border border-murekkep/10 bg-krem/60 p-4 font-mono text-sm leading-relaxed text-murekkep outline-none transition placeholder:text-zeytin-acik/60 focus:border-biber/40 focus:bg-kagit focus:ring-4 focus:ring-biber/10"
               />
-              <p className="mt-3 text-xs text-zeytin-acik">
-                Satır başına bir içerik yazın. `#` ile başlayan satırlar not
-                sayılır.
+              <p className="mt-3 text-xs text-zeytin-acik mb-4">
+                Satır başına bir içerik yazın. `#` ile başlayan satırlar not sayılır.
               </p>
+              
+              <button
+                onClick={analizEt}
+                disabled={bosMu || yukleniyor}
+                className="w-full rounded-lg bg-murekkep px-4 py-3 text-sm font-medium text-krem transition hover:bg-zeytin disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {yukleniyor ? "Analiz ediliyor..." : "Analiz Et (1 kredi)"}
+              </button>
             </div>
           </section>
 
           <section aria-live="polite">
-            {bosMu ? (
+            {hata && (
+              <div className="mb-6 rounded-lg border border-safran/40 bg-safran/10 p-5">
+                <p className="text-sm text-biber">{hata}</p>
+                {hata.includes("kredi") && (
+                  <button className="mt-3 rounded-md bg-kagit px-3 py-1.5 text-xs font-medium text-murekkep border border-murekkep/10 hover:bg-krem transition" onClick={() => alert("Kredi yükleme yakında!")}>
+                    Kredi Yükle
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!sonuc && !hata && !yukleniyor && (
               <div className="rounded-lg border border-dashed border-murekkep/20 bg-kagit/50 p-12 text-center">
                 <p className="text-sm text-zeytin-acik">
-                  Reçeteyi girdiğinizde rapor burada anlık oluşur.
+                  Reçetenizi yazıp &quot;Analiz Et&quot; butonuna bastığınızda raporunuz burada görünecektir.
                 </p>
               </div>
-            ) : (
+            )}
+
+            {yukleniyor && (
+              <div className="rounded-lg border border-dashed border-murekkep/20 bg-kagit/50 p-12 text-center flex flex-col items-center gap-4">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-biber border-t-transparent" />
+                <p className="text-sm text-zeytin-acik">
+                  Reçete taranıyor...
+                </p>
+              </div>
+            )}
+
+            {sonuc && !yukleniyor && (
               <div className="space-y-6">
                 <div
                   className={`rounded-lg border p-5 ${
@@ -121,8 +214,8 @@ export default function KontrolSayfasi() {
                     </p>
                   ) : (
                     <ul className="space-y-3">
-                      {sonuc.tespitEdilen.map((bulgu) => {
-                        const alerjen = ALLERGENS[bulgu.alerjenId];
+                      {sonuc.tespitEdilen.map((bulgu: any) => {
+                        const alerjen = ALLERGENS[bulgu.alerjenId as keyof typeof ALLERGENS];
                         return (
                           <li
                             key={bulgu.alerjenId}
@@ -137,7 +230,7 @@ export default function KontrolSayfasi() {
                               )}
                             </div>
                             <ul className="divide-y divide-kum">
-                              {bulgu.kaynaklar.map((kaynak, index) => (
+                              {bulgu.kaynaklar.map((kaynak: any, index: number) => (
                                 <li
                                   key={index}
                                   className="flex items-baseline justify-between gap-4 px-5 py-2.5"
@@ -165,8 +258,8 @@ export default function KontrolSayfasi() {
                     aciklama="Mevzuat, etin hangi hayvana ait olduğunun menüde belirtilmesini istiyor."
                   >
                     <ul className="space-y-3">
-                      {sonuc.etKokenleri.map((bulgu) => {
-                        const koken = ET_KOKENLERI[bulgu.kokenId];
+                      {sonuc.etKokenleri.map((bulgu: any) => {
+                        const koken = ET_KOKENLERI[bulgu.kokenId as keyof typeof ET_KOKENLERI];
                         return (
                           <li
                             key={bulgu.kokenId}
@@ -178,7 +271,7 @@ export default function KontrolSayfasi() {
                               </h3>
                             </div>
                             <ul className="divide-y divide-kum">
-                              {bulgu.kaynaklar.map((kaynak, index) => (
+                              {bulgu.kaynaklar.map((kaynak: any, index: number) => (
                                 <li
                                   key={index}
                                   className="flex items-baseline justify-between gap-4 px-5 py-2.5"
@@ -206,7 +299,7 @@ export default function KontrolSayfasi() {
                     aciklama="Bu içerikler etin hangi hayvandan geldiğini söylemiyor. Menüde belirtilmesi zorunlu."
                   >
                     <ul className="space-y-3">
-                      {sonuc.etBelirsiz.map((bulgu, index) => (
+                      {sonuc.etBelirsiz.map((bulgu: any, index: number) => (
                         <li
                           key={index}
                           className="rounded-lg border border-safran/40 bg-kagit p-5 shadow-sm"
@@ -217,9 +310,9 @@ export default function KontrolSayfasi() {
                           <p className="mt-2 text-sm text-biber">{bulgu.soru}</p>
                           {bulgu.olasiKokenler.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-1.5">
-                              {bulgu.olasiKokenler.map((id) => (
+                              {bulgu.olasiKokenler.map((id: string) => (
                                 <AlerjenRozeti key={id}>
-                                  {ET_KOKENLERI[id].ad}
+                                  {ET_KOKENLERI[id as keyof typeof ET_KOKENLERI].ad}
                                 </AlerjenRozeti>
                               ))}
                             </div>
@@ -237,7 +330,7 @@ export default function KontrolSayfasi() {
                     aciklama="Bu içerikler tek başına hangi alerjene girdiğini söylemiyor. Tahmin etmiyoruz."
                   >
                     <ul className="space-y-3">
-                      {sonuc.belirsiz.map((bulgu, index) => (
+                      {sonuc.belirsiz.map((bulgu: any, index: number) => (
                         <li
                           key={index}
                           className="rounded-lg border border-safran/40 bg-kagit p-5 shadow-sm"
@@ -250,9 +343,9 @@ export default function KontrolSayfasi() {
                           </p>
                           {bulgu.olasiAlerjenler.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-1.5">
-                              {bulgu.olasiAlerjenler.map((id) => (
+                              {bulgu.olasiAlerjenler.map((id: string) => (
                                 <AlerjenRozeti key={id}>
-                                  {ALLERGENS[id].ad}
+                                  {ALLERGENS[id as keyof typeof ALLERGENS].ad}
                                 </AlerjenRozeti>
                               ))}
                             </div>
@@ -270,7 +363,7 @@ export default function KontrolSayfasi() {
                     aciklama="Sözlüğümüzde yoklar. Alerjen içermedikleri anlamına gelmez — elle kontrol edin."
                   >
                     <ul className="divide-y divide-kum rounded-lg border border-murekkep/10 bg-kagit shadow-sm">
-                      {sonuc.taninmayan.map((satir, index) => (
+                      {sonuc.taninmayan.map((satir: string, index: number) => (
                         <li
                           key={index}
                           className="px-5 py-2.5 font-mono text-sm text-zeytin-acik"
@@ -288,7 +381,7 @@ export default function KontrolSayfasi() {
                     aciklama="Metinde açıkça bulunmadığı belirtilen alerjenler."
                   >
                     <ul className="divide-y divide-kum rounded-lg border border-murekkep/10 bg-kagit shadow-sm">
-                      {sonuc.beyanEdilenYok.map((bulgu, index) => (
+                      {sonuc.beyanEdilenYok.map((bulgu: any, index: number) => (
                         <li
                           key={index}
                           className="flex items-baseline justify-between gap-4 px-5 py-2.5"
@@ -297,7 +390,7 @@ export default function KontrolSayfasi() {
                             {bulgu.satir}
                           </span>
                           <span className="shrink-0 text-xs text-zeytin-acik">
-                            {ALLERGENS[bulgu.alerjenId].ad} bildirilmedi
+                            {ALLERGENS[bulgu.alerjenId as keyof typeof ALLERGENS].ad} bildirilmedi
                           </span>
                         </li>
                       ))}
