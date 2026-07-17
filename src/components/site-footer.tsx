@@ -51,15 +51,15 @@ export function SiteFooter() {
                 className="grid h-9 w-9 place-items-center rounded-full bg-biber text-sm font-semibold text-krem"
                 aria-hidden
               >
-                AK
+                ŞM
               </span>
               <span className="font-display text-xl font-semibold">
-                Alerjen Kontrol
+                Şeffaf Menü
               </span>
             </div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-krem/60">
               Restoran, kafe ve zincir markaların menülerini Türk Gıda
-              Kodeksi&apos;ne uygun hale getirir.
+              Kodeksi&apos;ne uygun hale getiren uyum hizmeti.
             </p>
 
             <form className="mt-6 max-w-xs" aria-label="Bülten aboneliği">
@@ -126,7 +126,7 @@ export function SiteFooter() {
         {/* Alt şerit */}
         <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-krem/10 pt-6 sm:flex-row">
           <p className="text-xs text-krem/40">
-            © {new Date().getFullYear()} Alerjen Kontrol · Türkiye
+            © {new Date().getFullYear()} Şeffaf Menü · Türkiye
           </p>
           <div className="flex gap-6 text-xs text-krem/40">
             <a

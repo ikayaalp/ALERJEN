@@ -86,15 +86,16 @@ export default function AnaSayfa() {
               </p>
 
               <h1 className="font-display text-[3.25rem] font-semibold leading-[0.98] tracking-[-0.02em] text-murekkep sm:text-[4.25rem]">
-                Mutfağında ne var,
+                Menünüz mevzuata
                 <br />
-                <span className="text-biber">menün onu söylesin.</span>
+                <span className="text-biber">şeffaf ve hazır.</span>
               </h1>
 
               <p className="mt-6 max-w-lg text-lg leading-relaxed text-zeytin-acik">
-                Reçeteni yaz, Türk Gıda Kodeksi&apos;nin bildirmeni zorunlu
-                tuttuğu alerjenleri satır satır çıkaralım. Emin olmadığımız
-                yerde tahmin yürütmeyiz — sana sorarız.
+                Şeffaf Menü, işletmenizin reçetelerini Türk Gıda Kodeksi&apos;ne
+                göre tarar; alerjen, et kökeni, alkol ve kalori bildirimlerini
+                satır satır hazırlar. Emin olmadığı yerde tahmin yürütmez, size
+                sorar.
               </p>
 
               <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -511,10 +512,11 @@ export default function AnaSayfa() {
           />
           <div className="relative mx-auto max-w-6xl px-6 py-24 text-center">
             <h2 className="mx-auto max-w-2xl font-display text-4xl font-semibold leading-tight tracking-[-0.02em] text-krem sm:text-5xl">
-              İlk reçeteni 30 saniyede kontrol et.
+              Menünüzü bugün mevzuata uygun hale getirin.
             </h2>
             <p className="mx-auto mt-4 max-w-md text-krem/75">
-              Kayıt yok, kurulum yok. Reçeteni yapıştır, raporu gör.
+              İlk kontrol ücretsiz. Kayıt yok, kurulum yok — reçetenizi
+              yapıştırın, raporu görün.
             </p>
             <Link
               href="/kontrol"

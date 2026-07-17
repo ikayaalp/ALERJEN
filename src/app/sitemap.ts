@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = "https://alerjenkontrol.com";
+const SITE_URL = "https://seffafmenu.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const simdi = new Date();

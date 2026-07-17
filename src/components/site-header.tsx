@@ -9,10 +9,10 @@ export function SiteHeader() {
             className="grid h-8 w-8 place-items-center rounded-full bg-biber text-[13px] font-semibold text-krem"
             aria-hidden
           >
-            AK
+            ŞM
           </span>
           <span className="font-display text-xl font-semibold tracking-tight text-murekkep">
-            Alerjen Kontrol
+            Şeffaf Menü
           </span>
         </Link>
 

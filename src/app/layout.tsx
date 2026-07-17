@@ -18,16 +18,16 @@ const fraunces = Fraunces({
   axes: ["SOFT", "WONK", "opsz"],
 });
 
-const SITE_URL = "https://alerjenkontrol.com";
-const BASLIK = "Alerjen Kontrol — Menü ve Reçete Alerjen Tarama Aracı";
+const SITE_URL = "https://seffafmenu.com";
+const BASLIK = "Şeffaf Menü — Menü Mevzuat Uyum Hizmeti";
 const ACIKLAMA =
-  "Restoran ve kafeler için reçete alerjen kontrolü. Türk Gıda Kodeksi'nin 1 Temmuz 2026'da zorunlu kıldığı 14 alerjen, et kökeni, alkol ve kalori bildirimlerini menünüz için satır satır çıkarır.";
+  "Restoran ve kafeler için menü mevzuat uyum hizmeti. Türk Gıda Kodeksi'nin 1 Temmuz 2026'da zorunlu kıldığı 14 alerjen, et kökeni, alkol ve kalori bildirimlerini reçetelerinizden satır satır çıkarır.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: BASLIK,
-    template: "%s — Alerjen Kontrol",
+    template: "%s — Şeffaf Menü",
   },
   description: ACIKLAMA,
   keywords: [
@@ -42,13 +42,13 @@ export const metadata: Metadata = {
     "kafe alerjen mevzuatı",
     "reçete alerjen kontrolü",
   ],
-  authors: [{ name: "Alerjen Kontrol" }],
+  authors: [{ name: "Şeffaf Menü" }],
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "tr_TR",
     url: SITE_URL,
-    siteName: "Alerjen Kontrol",
+    siteName: "Şeffaf Menü",
     title: BASLIK,
     description: ACIKLAMA,
   },
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
 const YAPISAL_VERI = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  name: "Alerjen Kontrol",
+  name: "Şeffaf Menü",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   url: SITE_URL,
