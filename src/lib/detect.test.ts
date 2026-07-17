@@ -147,6 +147,45 @@ describe("tanınmayan içerikler", () => {
   });
 });
 
+describe("et kökeni", () => {
+  it("tavuğu kanatlı olarak bildirir", () => {
+    const sonuc = alerjenTespitEt("300 g tavuk göğsü");
+    expect(sonuc.etKokenleri.map((b) => b.kokenId)).toEqual(["kanatli"]);
+  });
+
+  it("dana ve kuzuyu ayrı ayrı bildirir", () => {
+    const sonuc = alerjenTespitEt("200 g dana eti\n200 g kuzu but");
+    expect(sonuc.etKokenleri.map((b) => b.kokenId).sort()).toEqual([
+      "dana",
+      "kuzu",
+    ]);
+  });
+
+  it("'kıyma' için hangi hayvan olduğunu sorar", () => {
+    const sonuc = alerjenTespitEt("500 g kıyma");
+    expect(sonuc.etKokenleri).toHaveLength(0);
+    expect(sonuc.etBelirsiz.map((b) => b.terim)).toContain("kıyma");
+    expect(incelemeGerekiyorMu(sonuc)).toBe(true);
+  });
+
+  it("et taramasının tanıdığı satırı 'tanınmayan' saymaz", () => {
+    const sonuc = alerjenTespitEt("500 g kıyma");
+    expect(sonuc.taninmayan).toHaveLength(0);
+  });
+
+  it("domuz hem alerjen hem et kökeni olarak raporlanır", () => {
+    const sonuc = alerjenTespitEt("100 g domuz eti");
+    expect(sonuc.tespitEdilen.map((b) => b.alerjenId)).toContain("domuz");
+    expect(sonuc.etKokenleri.map((b) => b.kokenId)).toContain("domuz");
+  });
+
+  it("'dana döner' kesin köken verir, ayrıca 'döner' diye sormaz", () => {
+    const sonuc = alerjenTespitEt("200 g dana döner");
+    expect(sonuc.etKokenleri.map((b) => b.kokenId)).toContain("dana");
+    expect(sonuc.etBelirsiz.map((b) => b.terim)).not.toContain("dana");
+  });
+});
+
 describe("reçete ayrıştırma", () => {
   it("boş satırları ve yorumları atar", () => {
     const sonuc = alerjenTespitEt("# Kek reçetesi\n\n200 ml süt\n\n");

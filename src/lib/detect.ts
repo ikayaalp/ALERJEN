@@ -1,5 +1,11 @@
 import { ALLERGENS, type AllergenId } from "./allergens";
 import { AMBIGUOUS_TERMS, INGREDIENT_RULES } from "./ingredient-map";
+import {
+  ET_BELIRSIZ_TERIMLER,
+  ET_KOKENLERI,
+  ET_KURALLARI,
+  type EtKokeniId,
+} from "./meat";
 
 /**
  * Türkçe metni eşleme için sadeleştirir: küçük harfe çevirir ve aksanları
@@ -112,6 +118,18 @@ export interface BeyanEdilenYokBulgu {
   eslesenTerim: string;
 }
 
+export interface EtBulgusu {
+  kokenId: EtKokeniId;
+  kaynaklar: { satir: string; eslesenTerim: string }[];
+}
+
+export interface EtBelirsizBulgu {
+  satir: string;
+  terim: string;
+  soru: string;
+  olasiKokenler: EtKokeniId[];
+}
+
 export interface TespitSonucu {
   /** Kesin eşleşen alerjenler */
   tespitEdilen: AlerjenBulgusu[];
@@ -121,6 +139,10 @@ export interface TespitSonucu {
   beyanEdilenYok: BeyanEdilenYokBulgu[];
   /** Sözlükte karşılığı olmayan satırlar — temiz demek DEĞİL, incelenmeli demek */
   taninmayan: string[];
+  /** Mevzuatın ayrıca istediği et kökeni bildirimi */
+  etKokenleri: EtBulgusu[];
+  /** Hangi hayvandan geldiği belirsiz et terimleri ("kıyma", "döner") */
+  etBelirsiz: EtBelirsizBulgu[];
 }
 
 /** Reçete metnini satırlara böler; boş satırları ve yorumları atar. */
@@ -138,6 +160,69 @@ const SIRALI_KURALLAR = [...INGREDIENT_RULES].sort(
 const SIRALI_BELIRSIZLER = [...AMBIGUOUS_TERMS].sort(
   (a, b) => b.terim.length - a.terim.length,
 );
+const SIRALI_ET_KURALLARI = [...ET_KURALLARI].sort(
+  (a, b) => b.terim.length - a.terim.length,
+);
+const SIRALI_ET_BELIRSIZLER = [...ET_BELIRSIZ_TERIMLER].sort(
+  (a, b) => b.terim.length - a.terim.length,
+);
+
+/**
+ * Et kökeni taraması. Alerjen taramasından bağımsız yürür ve kendi aralık
+ * takibini tutar — "domuz" gibi hem alerjen hem köken olan terimler iki
+ * raporda da görünmeli.
+ */
+function etKokeniTara(satirlar: string[]) {
+  const bulgular = new Map<EtKokeniId, EtBulgusu>();
+  const etBelirsiz: EtBelirsizBulgu[] = [];
+
+  for (const satir of satirlar) {
+    const normalSatir = normalize(satir);
+    const isaretliAraliklar: { bas: number; son: number }[] = [];
+
+    for (const kural of SIRALI_ET_KURALLARI) {
+      const eslesme = terimBul(normalSatir, normalize(kural.terim)).find(
+        (aday) => !cakisiyorMu(aday, isaretliAraliklar),
+      );
+      if (!eslesme || olumsuzMu(normalSatir, eslesme.ek)) continue;
+
+      isaretliAraliklar.push({ bas: eslesme.bas, son: eslesme.son });
+
+      for (const kokenId of kural.kokenler) {
+        const mevcut = bulgular.get(kokenId);
+        if (mevcut) {
+          mevcut.kaynaklar.push({ satir, eslesenTerim: kural.terim });
+        } else {
+          bulgular.set(kokenId, {
+            kokenId,
+            kaynaklar: [{ satir, eslesenTerim: kural.terim }],
+          });
+        }
+      }
+    }
+
+    for (const belirsizTerim of SIRALI_ET_BELIRSIZLER) {
+      const eslesme = terimBul(normalSatir, normalize(belirsizTerim.terim)).find(
+        (aday) => !cakisiyorMu(aday, isaretliAraliklar),
+      );
+      if (!eslesme || olumsuzMu(normalSatir, eslesme.ek)) continue;
+
+      isaretliAraliklar.push({ bas: eslesme.bas, son: eslesme.son });
+      etBelirsiz.push({
+        satir,
+        terim: belirsizTerim.terim,
+        soru: belirsizTerim.soru,
+        olasiKokenler: belirsizTerim.olasiKokenler,
+      });
+    }
+  }
+
+  const etKokenleri = [...bulgular.values()].sort((a, b) =>
+    ET_KOKENLERI[a.kokenId].ad.localeCompare(ET_KOKENLERI[b.kokenId].ad, "tr"),
+  );
+
+  return { etKokenleri, etBelirsiz };
+}
 
 export function alerjenTespitEt(metin: string): TespitSonucu {
   const satirlar = receteyiAyristir(metin);
@@ -241,10 +326,30 @@ export function alerjenTespitEt(metin: string): TespitSonucu {
     ALLERGENS[a.alerjenId].ad.localeCompare(ALLERGENS[b.alerjenId].ad, "tr"),
   );
 
-  return { tespitEdilen, belirsiz, beyanEdilenYok, taninmayan };
+  const { etKokenleri, etBelirsiz } = etKokeniTara(satirlar);
+
+  // Et taramasının tanıdığı satır "tanınmayan" sayılmaz: "200 g kıyma"
+  // alerjen sözlüğünde yok ama bilinmeyen bir içerik de değil.
+  const etinTanidigiSatirlar = new Set([
+    ...etKokenleri.flatMap((bulgu) => bulgu.kaynaklar.map((k) => k.satir)),
+    ...etBelirsiz.map((bulgu) => bulgu.satir),
+  ]);
+
+  return {
+    tespitEdilen,
+    belirsiz,
+    beyanEdilenYok,
+    taninmayan: taninmayan.filter((satir) => !etinTanidigiSatirlar.has(satir)),
+    etKokenleri,
+    etBelirsiz,
+  };
 }
 
 /** Rapor tam mı, yoksa kullanıcı müdahalesi gerekiyor mu? */
 export function incelemeGerekiyorMu(sonuc: TespitSonucu): boolean {
-  return sonuc.belirsiz.length > 0 || sonuc.taninmayan.length > 0;
+  return (
+    sonuc.belirsiz.length > 0 ||
+    sonuc.taninmayan.length > 0 ||
+    sonuc.etBelirsiz.length > 0
+  );
 }

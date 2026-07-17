@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
+  --background: #fbf7f0;
+  --foreground: #16211a;
 }
 
 @theme inline {
@@ -10,13 +10,86 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-serif);
+  --font-display: var(--font-fraunces);
+
+  /* Mutfak paleti: krem kağıt, zeytin, kırmızıbiber, safran */
+  --color-krem: #fbf7f0;
+  --color-kum: #f0e7d6;
+  --color-kagit: #fffdf8;
+  --color-murekkep: #16211a;
+  --color-zeytin: #33402f;
+  --color-zeytin-acik: #5c6b52;
+  --color-biber: #b4441f;
+  --color-biber-acik: #d9663f;
+  --color-safran: #d9a441;
+  --color-safran-acik: #f0cf8a;
 }
 
-/* Rapor arayüzü olduğu için açık zeminde sabit: alerjen uyarılarının
-   kırmızı/amber kodlaması koyu temada güvenilir okunmuyor. */
+/* Açık temada sabit: alerjen uyarılarının kırmızı/safran kodlaması koyu
+   zeminde güvenilir okunmuyor. */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* İnce kağıt dokusu — düz renk bloklarının dijital/steril durmasını engeller */
+.doku {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E");
+}
+
+/* --- Scroll ile beliren giriş animasyonu --- */
+@keyframes belir {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.belir {
+  opacity: 0;
+}
+
+.belir.gorundu {
+  animation: belir 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Kademeli gecikme — kartlar sırayla belirsin */
+.gecik-1 { animation-delay: 0.08s; }
+.gecik-2 { animation-delay: 0.16s; }
+.gecik-3 { animation-delay: 0.24s; }
+.gecik-4 { animation-delay: 0.32s; }
+
+/* Yavaş yüzen arka plan lekesi */
+@keyframes yuz {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-3%, 4%) scale(1.06); }
+}
+
+.yuz {
+  animation: yuz 14s ease-in-out infinite;
+}
+
+/* Butonlarda hafif kalkma */
+.kalk {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.kalk:hover {
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .belir,
+  .belir.gorundu,
+  .yuz,
+  .kalk {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
