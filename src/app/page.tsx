@@ -1,265 +1,401 @@
-"use client";
+import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
 
-import { useMemo, useState } from "react";
-import { ALLERGENS } from "@/lib/allergens";
-import { alerjenTespitEt, incelemeGerekiyorMu } from "@/lib/detect";
-import { AlerjenRozeti } from "@/components/alerjen-rozeti";
-import { Bolum } from "@/components/bolum";
+const OZELLIKLER = [
+  {
+    baslik: "Satır satır kaynak",
+    metin:
+      "Her alerjenin reçetenin hangi satırından, hangi kelimeden geldiğini gösteririz. Denetimde 'neden bu çıktı?' sorusunun cevabı hazırdır.",
+  },
+  {
+    baslik: "Tahmin yok, soru var",
+    metin:
+      "'Fıstık' yer fıstığı mı antep fıstığı mı? 'Jelatin' hangi kaynaktan? Belirsiz içerikte karar size bırakılır — sessizce varsayılmaz.",
+  },
+  {
+    baslik: "Türkiye'ye özel bildirimler",
+    metin:
+      "14 zorunlu alerjenin yanında mevzuatın istediği alkol ve domuz kaynaklı bileşen bildirimlerini de ayrı işaretleriz.",
+  },
+  {
+    baslik: "Olumsuzluk anlayışı",
+    metin:
+      "'Glutensiz ekmek' glüten bildirmez; ama 'laktozsuz süt' süt bildirmeye devam eder — çünkü süt proteini hâlâ oradadır.",
+  },
+  {
+    baslik: "Fotoğraftan reçete",
+    metin:
+      "Reçetenizin fotoğrafını yükleyin, metni çıkarıp onayınıza sunalım. Onaysız hiçbir metin analize girmez.",
+    yakinda: true,
+  },
+  {
+    baslik: "QR menü çıktısı",
+    metin:
+      "Onaylanan raporlardan yönetmeliğin kabul ettiği karekodlu alerjen menüsü üretin.",
+    yakinda: true,
+  },
+];
 
-const ORNEK_RECETE = `500 g buğday unu
-200 ml süt
-3 yumurta
-100 g tereyağı
-50 g fındık
-1 tatlı kaşığı tuz`;
+const TAKVIM = [
+  {
+    tarih: "1 Temmuz 2026",
+    kim: "Ulusal zincir restoranlar",
+    ne: "Menülerde alerjen bilgisi zorunlu.",
+    gecti: true,
+  },
+  {
+    tarih: "31 Aralık 2026",
+    kim: "Aynı ilde 3+ şubeli yerel zincirler",
+    ne: "Alerjen bilgisi zorunluluğu başlıyor.",
+    gecti: false,
+  },
+  {
+    tarih: "31 Aralık 2027",
+    kim: "Yerel zincirler",
+    ne: "Kalori beyanı zorunluluğu başlıyor.",
+    gecti: false,
+  },
+];
 
-export default function Home() {
-  const [recete, setRecete] = useState("");
+const PLANLAR = [
+  {
+    ad: "Başlangıç",
+    fiyat: "Ücretsiz",
+    donem: "",
+    aciklama: "Tek şubeli işletmeler ve deneme için.",
+    maddeler: [
+      "Sınırsız reçete kontrolü",
+      "14 zorunlu alerjen + 2 ek bildirim",
+      "Satır satır kaynak raporu",
+    ],
+    eylem: { metin: "Hemen başla", href: "/kontrol" },
+    one_cikan: false,
+  },
+  {
+    ad: "İşletme",
+    fiyat: "₺499",
+    donem: "/ay",
+    aciklama: "Menüsünü mevzuata hazırlayan restoranlar için.",
+    maddeler: [
+      "Başlangıç'taki her şey",
+      "Reçete arşivi ve sürüm geçmişi",
+      "PDF rapor çıktısı",
+      "Fotoğraftan reçete (yakında)",
+      "QR menü çıktısı (yakında)",
+    ],
+    eylem: { metin: "Planı seç", href: "/giris" },
+    one_cikan: true,
+  },
+  {
+    ad: "Zincir",
+    fiyat: "Özel",
+    donem: "",
+    aciklama: "Çok şubeli markalar ve merkezi mutfaklar için.",
+    maddeler: [
+      "İşletme'deki her şey",
+      "Şube bazlı menü yönetimi",
+      "Toplu reçete aktarımı",
+      "Öncelikli destek",
+    ],
+    eylem: { metin: "Bize ulaşın", href: "mailto:kayaalp.ismail.1221@gmail.com" },
+    one_cikan: false,
+  },
+];
 
-  const sonuc = useMemo(() => alerjenTespitEt(recete), [recete]);
-  const bosMu = recete.trim().length === 0;
-  const inceleme = incelemeGerekiyorMu(sonuc);
-  const acikNoktaSayisi = sonuc.belirsiz.length + sonuc.taninmayan.length;
-
+export default function AnaSayfa() {
   return (
     <div className="min-h-full">
-      <header className="border-b border-stone-200/80 bg-white/70 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <div className="flex items-baseline gap-3">
-            <span className="font-display text-2xl tracking-tight text-stone-900">
-              Alerjen Kontrol
-            </span>
-            <span className="hidden text-xs uppercase tracking-[0.18em] text-stone-400 sm:block">
-              Türk Gıda Kodeksi
-            </span>
-          </div>
-          <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs text-stone-500">
-            14 zorunlu alerjen + 2 ek bildirim
-          </span>
-        </div>
-      </header>
+      <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <section className="mb-12 max-w-2xl">
-          <h1 className="font-display text-4xl leading-tight tracking-tight text-stone-900 sm:text-5xl">
-            Reçetenizi yazın, bildirimi zorunlu alerjenleri
-            <span className="text-amber-700"> satır satır</span> çıkaralım.
-          </h1>
-          <p className="mt-4 text-stone-600">
-            Her bulgunun hangi içerikten geldiğini gösteririz. Emin olmadığımız
-            yerde tahmin yürütmez, size sorarız.
+      <main>
+        {/* Hero */}
+        <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 pb-20 pt-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:pt-24">
+          <div>
+            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-900">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-600" />
+              1 Temmuz 2026 — menüde alerjen bildirimi dönemi başladı
+            </p>
+            <h1 className="font-display text-5xl leading-[1.05] tracking-tight text-stone-900 sm:text-6xl">
+              Menünüz mevzuata hazır mı, reçeteniz söylesin.
+            </h1>
+            <p className="mt-5 max-w-xl text-lg text-stone-600">
+              Reçetenizi yazın; Türk Gıda Kodeksi&apos;nin bildirimi zorunlu
+              tuttuğu alerjenleri satır satır, kaynağıyla birlikte çıkaralım.
+              Emin olmadığımız yerde tahmin yürütmeyiz — size sorarız.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <Link
+                href="/kontrol"
+                className="rounded-full bg-stone-900 px-6 py-3 text-sm font-medium text-stone-50 shadow-sm transition hover:bg-stone-700"
+              >
+                Ücretsiz kontrol et
+              </Link>
+              <Link
+                href="#takvim"
+                className="rounded-full border border-stone-300 px-6 py-3 text-sm text-stone-700 transition hover:border-stone-400 hover:bg-white"
+              >
+                Mevzuat takvimi
+              </Link>
+            </div>
+            <p className="mt-4 text-xs text-stone-500">
+              Kayıt gerekmez · Reçeteniz tarayıcınızdan çıkmaz
+            </p>
+          </div>
+
+          {/* Statik rapor örneği */}
+          <div className="relative">
+            <div
+              className="absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-amber-100/60 via-transparent to-red-100/40"
+              aria-hidden
+            />
+            <div className="relative rounded-2xl border border-stone-200 bg-white p-5 shadow-lg shadow-stone-200/60">
+              <div className="mb-4 flex items-center justify-between border-b border-stone-100 pb-3">
+                <span className="font-display text-lg text-stone-900">
+                  Rapor · Fındıklı kek
+                </span>
+                <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
+                  4 alerjen
+                </span>
+              </div>
+              <ul className="space-y-2.5 text-sm">
+                {[
+                  ["Glüten içeren tahıllar", "500 g buğday unu"],
+                  ["Süt", "200 ml süt · 100 g tereyağı"],
+                  ["Yumurta", "3 yumurta"],
+                  ["Sert kabuklu yemişler", "50 g fındık"],
+                ].map(([alerjen, kaynak]) => (
+                  <li
+                    key={alerjen}
+                    className="flex items-baseline justify-between gap-3 rounded-lg border border-red-100 bg-red-50/50 px-3.5 py-2.5"
+                  >
+                    <span className="font-medium text-red-950">{alerjen}</span>
+                    <span className="text-right font-mono text-xs text-stone-500">
+                      {kaynak}
+                    </span>
+                  </li>
+                ))}
+                <li className="flex items-baseline justify-between gap-3 rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-2.5">
+                  <span className="text-stone-700">1 tatlı kaşığı tuz</span>
+                  <span className="text-xs text-stone-500">
+                    tanınmadı — elle kontrol
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Özellikler */}
+        <section id="ozellikler" className="border-y border-stone-200 bg-white">
+          <div className="mx-auto max-w-6xl px-6 py-20">
+            <h2 className="font-display text-3xl tracking-tight text-stone-900 sm:text-4xl">
+              Denetimde savunabileceğiniz bir rapor
+            </h2>
+            <p className="mt-3 max-w-2xl text-stone-600">
+              Kara kutu değil. Her bulgunun gerekçesi görünür, her belirsizlik
+              açıkça işaretlenir.
+            </p>
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {OZELLIKLER.map((ozellik) => (
+                <div
+                  key={ozellik.baslik}
+                  className="rounded-2xl border border-stone-200 bg-stone-50/50 p-6"
+                >
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium text-stone-900">
+                      {ozellik.baslik}
+                    </h3>
+                    {ozellik.yakinda && (
+                      <span className="rounded-full bg-stone-200 px-2 py-0.5 text-[11px] text-stone-600">
+                        yakında
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-stone-600">
+                    {ozellik.metin}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Mevzuat takvimi */}
+        <section id="takvim" className="mx-auto max-w-6xl px-6 py-20">
+          <h2 className="font-display text-3xl tracking-tight text-stone-900 sm:text-4xl">
+            Mevzuat takvimi
+          </h2>
+          <p className="mt-3 max-w-2xl text-stone-600">
+            Tarım ve Orman Bakanlığı düzenlemesi kademeli yürürlüğe giriyor.
+            Hangi tarihte kimin kapsamda olduğunu bilin.
+          </p>
+          <ol className="mt-10 space-y-0">
+            {TAKVIM.map((madde, index) => (
+              <li key={madde.tarih} className="relative flex gap-6 pb-10 last:pb-0">
+                <div className="flex flex-col items-center">
+                  <span
+                    className={`mt-1 h-3 w-3 shrink-0 rounded-full ${
+                      madde.gecti ? "bg-amber-600" : "bg-stone-300"
+                    }`}
+                  />
+                  {index < TAKVIM.length - 1 && (
+                    <span className="mt-1 w-px flex-1 bg-stone-200" />
+                  )}
+                </div>
+                <div className="-mt-0.5">
+                  <p className="font-display text-xl text-stone-900">
+                    {madde.tarih}
+                    {madde.gecti && (
+                      <span className="ml-3 rounded-full bg-amber-100 px-2.5 py-0.5 align-middle text-xs font-sans text-amber-900">
+                        yürürlükte
+                      </span>
+                    )}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-stone-700">
+                    {madde.kim}
+                  </p>
+                  <p className="text-sm text-stone-600">{madde.ne}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-8 max-w-2xl text-xs text-stone-500">
+            Tarihler ikincil kaynaklardan derlenmiştir; işletmenizin
+            yükümlülüğünü Resmî Gazete metninden ve bağlı olduğunuz il
+            müdürlüğünden teyit edin.
           </p>
         </section>
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start">
-          <section className="lg:sticky lg:top-8">
-            <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-              <div className="mb-3 flex items-baseline justify-between">
-                <label
-                  htmlFor="recete"
-                  className="text-sm font-medium text-stone-800"
-                >
-                  Reçete
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setRecete(ORNEK_RECETE)}
-                  className="text-xs text-stone-500 underline underline-offset-4 transition hover:text-amber-700"
-                >
-                  Örnek yükle
-                </button>
-              </div>
-              <textarea
-                id="recete"
-                value={recete}
-                onChange={(olay) => setRecete(olay.target.value)}
-                rows={14}
-                spellCheck={false}
-                placeholder={"500 g buğday unu\n200 ml süt\n3 yumurta"}
-                className="w-full resize-none rounded-xl border border-stone-200 bg-stone-50/60 p-4 font-mono text-sm leading-relaxed text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-amber-600/40 focus:bg-white focus:ring-4 focus:ring-amber-600/10"
-              />
-              <p className="mt-3 text-xs text-stone-500">
-                Satır başına bir içerik yazın. `#` ile başlayan satırlar not
-                sayılır.
-              </p>
-            </div>
-          </section>
-
-          <section aria-live="polite">
-            {bosMu ? (
-              <div className="rounded-2xl border border-dashed border-stone-300 bg-white/50 p-12 text-center">
-                <p className="text-sm text-stone-500">
-                  Reçeteyi girdiğinizde rapor burada anlık oluşur.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-6">
+        {/* Fiyatlandırma */}
+        <section id="fiyat" className="border-t border-stone-200 bg-white">
+          <div className="mx-auto max-w-6xl px-6 py-20">
+            <h2 className="font-display text-3xl tracking-tight text-stone-900 sm:text-4xl">
+              Fiyatlandırma
+            </h2>
+            <p className="mt-3 max-w-2xl text-stone-600">
+              Kontrol her zaman ücretsiz. Ücretli planlar arşiv, çıktı ve şube
+              yönetimi ekler.
+            </p>
+            <div className="mt-12 grid gap-6 lg:grid-cols-3">
+              {PLANLAR.map((plan) => (
                 <div
-                  className={`rounded-2xl border p-5 ${
-                    inceleme
-                      ? "border-amber-200 bg-amber-50"
-                      : "border-emerald-200 bg-emerald-50"
+                  key={plan.ad}
+                  className={`relative flex flex-col rounded-2xl border p-7 ${
+                    plan.one_cikan
+                      ? "border-stone-900 bg-stone-900 text-stone-50 shadow-xl shadow-stone-300/50"
+                      : "border-stone-200 bg-stone-50/50 text-stone-900"
                   }`}
                 >
-                  <p className="text-sm text-stone-800">
-                    {inceleme ? (
-                      <>
-                        <strong className="text-amber-900">
-                          Rapor tamamlanmadı.
-                        </strong>{" "}
-                        {acikNoktaSayisi} madde netleştirilmeli. Bunlar
-                        çözülmeden rapor kullanılamaz.
-                      </>
-                    ) : (
-                      <>
-                        <strong className="text-emerald-900">
-                          Tüm içerikler tanındı.
-                        </strong>{" "}
-                        Yine de bir gıda sorumlusunun onaylaması gerekir.
-                      </>
-                    )}
-                  </p>
-                </div>
-
-                <Bolum
-                  baslik="Tespit edilen alerjenler"
-                  sayi={sonuc.tespitEdilen.length}
-                >
-                  {sonuc.tespitEdilen.length === 0 ? (
-                    <p className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-600">
-                      Kesin eşleşme yok. Bu &quot;alerjen içermiyor&quot;
-                      anlamına <strong>gelmez</strong>.
-                    </p>
-                  ) : (
-                    <ul className="space-y-3">
-                      {sonuc.tespitEdilen.map((bulgu) => {
-                        const alerjen = ALLERGENS[bulgu.alerjenId];
-                        return (
-                          <li
-                            key={bulgu.alerjenId}
-                            className="overflow-hidden rounded-xl border border-red-200/80 bg-white shadow-sm"
-                          >
-                            <div className="flex items-center gap-2 border-b border-red-100 bg-red-50/70 px-5 py-3">
-                              <h3 className="font-medium text-red-950">
-                                {alerjen.ad}
-                              </h3>
-                              {alerjen.kapsam === "turkiye-ek" && (
-                                <AlerjenRozeti>Türkiye&apos;ye özel</AlerjenRozeti>
-                              )}
-                            </div>
-                            <ul className="divide-y divide-stone-100">
-                              {bulgu.kaynaklar.map((kaynak, index) => (
-                                <li
-                                  key={index}
-                                  className="flex items-baseline justify-between gap-4 px-5 py-2.5"
-                                >
-                                  <span className="font-mono text-sm text-stone-700">
-                                    {kaynak.satir}
-                                  </span>
-                                  <span className="shrink-0 rounded bg-red-50 px-2 py-0.5 font-mono text-xs text-red-700">
-                                    {kaynak.eslesenTerim}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                  {plan.one_cikan && (
+                    <span className="absolute -top-3 left-7 rounded-full bg-amber-500 px-3 py-1 text-xs font-medium text-stone-950">
+                      En çok tercih edilen
+                    </span>
                   )}
-                </Bolum>
-
-                {sonuc.belirsiz.length > 0 && (
-                  <Bolum
-                    baslik="Netleştirilmesi gerekenler"
-                    sayi={sonuc.belirsiz.length}
-                    aciklama="Bu içerikler tek başına hangi alerjene girdiğini söylemiyor. Tahmin etmiyoruz."
+                  <h3 className="font-medium">{plan.ad}</h3>
+                  <p className="mt-3">
+                    <span className="font-display text-4xl tracking-tight">
+                      {plan.fiyat}
+                    </span>
+                    <span
+                      className={
+                        plan.one_cikan ? "text-stone-400" : "text-stone-500"
+                      }
+                    >
+                      {plan.donem}
+                    </span>
+                  </p>
+                  <p
+                    className={`mt-2 text-sm ${
+                      plan.one_cikan ? "text-stone-300" : "text-stone-600"
+                    }`}
                   >
-                    <ul className="space-y-3">
-                      {sonuc.belirsiz.map((bulgu, index) => (
-                        <li
-                          key={index}
-                          className="rounded-xl border border-amber-200/80 bg-white p-5 shadow-sm"
-                        >
-                          <p className="font-mono text-sm text-stone-800">
-                            {bulgu.satir}
-                          </p>
-                          <p className="mt-2 text-sm text-amber-900">
-                            {bulgu.soru}
-                          </p>
-                          {bulgu.olasiAlerjenler.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {bulgu.olasiAlerjenler.map((id) => (
-                                <AlerjenRozeti key={id}>
-                                  {ALLERGENS[id].ad}
-                                </AlerjenRozeti>
-                              ))}
-                            </div>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </Bolum>
-                )}
-
-                {sonuc.taninmayan.length > 0 && (
-                  <Bolum
-                    baslik="Tanınmayan içerikler"
-                    sayi={sonuc.taninmayan.length}
-                    aciklama="Sözlüğümüzde yoklar. Alerjen içermedikleri anlamına gelmez — elle kontrol edin."
+                    {plan.aciklama}
+                  </p>
+                  <ul
+                    className={`mt-6 flex-1 space-y-2.5 text-sm ${
+                      plan.one_cikan ? "text-stone-200" : "text-stone-700"
+                    }`}
                   >
-                    <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
-                      {sonuc.taninmayan.map((satir, index) => (
-                        <li
-                          key={index}
-                          className="px-5 py-2.5 font-mono text-sm text-stone-600"
+                    {plan.maddeler.map((madde) => (
+                      <li key={madde} className="flex gap-2.5">
+                        <span
+                          className={
+                            plan.one_cikan ? "text-amber-400" : "text-amber-600"
+                          }
                         >
-                          {satir}
-                        </li>
-                      ))}
-                    </ul>
-                  </Bolum>
-                )}
-
-                {sonuc.beyanEdilenYok.length > 0 && (
-                  <Bolum
-                    baslik="Yokluk beyanı olarak okunanlar"
-                    aciklama="Metinde açıkça bulunmadığı belirtilen alerjenler."
+                          ✓
+                        </span>
+                        {madde}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href={plan.eylem.href}
+                    className={`mt-8 rounded-full px-5 py-2.5 text-center text-sm font-medium transition ${
+                      plan.one_cikan
+                        ? "bg-amber-500 text-stone-950 hover:bg-amber-400"
+                        : "border border-stone-300 text-stone-800 hover:border-stone-400 hover:bg-white"
+                    }`}
                   >
-                    <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
-                      {sonuc.beyanEdilenYok.map((bulgu, index) => (
-                        <li
-                          key={index}
-                          className="flex items-baseline justify-between gap-4 px-5 py-2.5"
-                        >
-                          <span className="font-mono text-sm text-stone-600">
-                            {bulgu.satir}
-                          </span>
-                          <span className="shrink-0 text-xs text-stone-500">
-                            {ALLERGENS[bulgu.alerjenId].ad} bildirilmedi
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </Bolum>
-                )}
-              </div>
-            )}
-          </section>
-        </div>
+                    {plan.eylem.metin}
+                  </Link>
+                </div>
+              ))}
+            </div>
+            <p className="mt-8 text-xs text-stone-500">
+              Çevrimiçi ödeme entegrasyonu hazırlanıyor; İşletme planı şu an
+              hesap açılışında etkinleştirilir.
+            </p>
+          </div>
+        </section>
 
-        <footer className="mt-16 border-t border-stone-200 pt-6">
-          <p className="max-w-3xl text-xs leading-relaxed text-stone-500">
-            <strong className="text-stone-700">
-              Bu araç bir onay belgesi değildir.
-            </strong>{" "}
-            Sonuçlar reçete metnindeki kelimelere dayanır; tedarikçi
-            bileşimlerini, üretim hattındaki çapraz bulaşmayı veya etiket dışı
-            içerikleri göremez. Nihai alerjen bildiriminin doğruluğundan yasal
-            olarak işletme sorumludur.
-          </p>
-        </footer>
+        {/* Kapanış CTA */}
+        <section className="mx-auto max-w-6xl px-6 py-20">
+          <div className="rounded-3xl border border-stone-200 bg-gradient-to-br from-stone-900 to-stone-800 px-8 py-14 text-center sm:px-14">
+            <h2 className="font-display text-3xl tracking-tight text-stone-50 sm:text-4xl">
+              İlk reçetenizi 30 saniyede kontrol edin
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-stone-300">
+              Kayıt yok, kurulum yok. Reçetenizi yapıştırın, raporu görün.
+            </p>
+            <Link
+              href="/kontrol"
+              className="mt-8 inline-block rounded-full bg-amber-500 px-8 py-3 text-sm font-medium text-stone-950 transition hover:bg-amber-400"
+            >
+              Ücretsiz dene
+            </Link>
+          </div>
+        </section>
       </main>
+
+      <footer className="border-t border-stone-200 bg-white">
+        <div className="mx-auto max-w-6xl px-6 py-10">
+          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+            <span className="font-display text-xl text-stone-900">
+              Alerjen Kontrol
+            </span>
+            <nav className="flex gap-6 text-sm text-stone-600">
+              <Link href="/#ozellikler" className="hover:text-stone-900">
+                Özellikler
+              </Link>
+              <Link href="/#fiyat" className="hover:text-stone-900">
+                Fiyatlandırma
+              </Link>
+              <Link href="/kontrol" className="hover:text-stone-900">
+                Kontrol aracı
+              </Link>
+            </nav>
+          </div>
+          <p className="mt-8 max-w-3xl text-xs leading-relaxed text-stone-500">
+            <strong className="text-stone-700">
+              Bu site bir onay mercii değildir.
+            </strong>{" "}
+            Raporlar reçete metnine dayanır; tedarikçi bileşimlerini, çapraz
+            bulaşmayı veya etiket dışı içerikleri göremez. Nihai alerjen
+            bildiriminin doğruluğundan yasal olarak işletme sorumludur.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
