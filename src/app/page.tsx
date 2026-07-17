@@ -1,64 +1,264 @@
-import Image from "next/image";
+"use client";
+
+import { useMemo, useState } from "react";
+import { ALLERGENS } from "@/lib/allergens";
+import { alerjenTespitEt, incelemeGerekiyorMu } from "@/lib/detect";
+import { AlerjenRozeti } from "@/components/alerjen-rozeti";
+import { Bolum } from "@/components/bolum";
+
+const ORNEK_RECETE = `500 g buğday unu
+200 ml süt
+3 yumurta
+100 g tereyağı
+50 g fındık
+1 tatlı kaşığı tuz`;
 
 export default function Home() {
+  const [recete, setRecete] = useState("");
+
+  const sonuc = useMemo(() => alerjenTespitEt(recete), [recete]);
+  const bosMu = recete.trim().length === 0;
+  const inceleme = incelemeGerekiyorMu(sonuc);
+  const acikNoktaSayisi = sonuc.belirsiz.length + sonuc.taninmayan.length;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-full">
+      <header className="border-b border-stone-200/80 bg-white/70 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+          <div className="flex items-baseline gap-3">
+            <span className="font-display text-2xl tracking-tight text-stone-900">
+              Alerjen Kontrol
+            </span>
+            <span className="hidden text-xs uppercase tracking-[0.18em] text-stone-400 sm:block">
+              Türk Gıda Kodeksi
+            </span>
+          </div>
+          <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs text-stone-500">
+            14 zorunlu alerjen + 2 ek bildirim
+          </span>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-6 py-12">
+        <section className="mb-12 max-w-2xl">
+          <h1 className="font-display text-4xl leading-tight tracking-tight text-stone-900 sm:text-5xl">
+            Reçetenizi yazın, bildirimi zorunlu alerjenleri
+            <span className="text-amber-700"> satır satır</span> çıkaralım.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-4 text-stone-600">
+            Her bulgunun hangi içerikten geldiğini gösteririz. Emin olmadığımız
+            yerde tahmin yürütmez, size sorarız.
           </p>
+        </section>
+
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start">
+          <section className="lg:sticky lg:top-8">
+            <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+              <div className="mb-3 flex items-baseline justify-between">
+                <label
+                  htmlFor="recete"
+                  className="text-sm font-medium text-stone-800"
+                >
+                  Reçete
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setRecete(ORNEK_RECETE)}
+                  className="text-xs text-stone-500 underline underline-offset-4 transition hover:text-amber-700"
+                >
+                  Örnek yükle
+                </button>
+              </div>
+              <textarea
+                id="recete"
+                value={recete}
+                onChange={(olay) => setRecete(olay.target.value)}
+                rows={14}
+                spellCheck={false}
+                placeholder={"500 g buğday unu\n200 ml süt\n3 yumurta"}
+                className="w-full resize-none rounded-xl border border-stone-200 bg-stone-50/60 p-4 font-mono text-sm leading-relaxed text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-amber-600/40 focus:bg-white focus:ring-4 focus:ring-amber-600/10"
+              />
+              <p className="mt-3 text-xs text-stone-500">
+                Satır başına bir içerik yazın. `#` ile başlayan satırlar not
+                sayılır.
+              </p>
+            </div>
+          </section>
+
+          <section aria-live="polite">
+            {bosMu ? (
+              <div className="rounded-2xl border border-dashed border-stone-300 bg-white/50 p-12 text-center">
+                <p className="text-sm text-stone-500">
+                  Reçeteyi girdiğinizde rapor burada anlık oluşur.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div
+                  className={`rounded-2xl border p-5 ${
+                    inceleme
+                      ? "border-amber-200 bg-amber-50"
+                      : "border-emerald-200 bg-emerald-50"
+                  }`}
+                >
+                  <p className="text-sm text-stone-800">
+                    {inceleme ? (
+                      <>
+                        <strong className="text-amber-900">
+                          Rapor tamamlanmadı.
+                        </strong>{" "}
+                        {acikNoktaSayisi} madde netleştirilmeli. Bunlar
+                        çözülmeden rapor kullanılamaz.
+                      </>
+                    ) : (
+                      <>
+                        <strong className="text-emerald-900">
+                          Tüm içerikler tanındı.
+                        </strong>{" "}
+                        Yine de bir gıda sorumlusunun onaylaması gerekir.
+                      </>
+                    )}
+                  </p>
+                </div>
+
+                <Bolum
+                  baslik="Tespit edilen alerjenler"
+                  sayi={sonuc.tespitEdilen.length}
+                >
+                  {sonuc.tespitEdilen.length === 0 ? (
+                    <p className="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-600">
+                      Kesin eşleşme yok. Bu &quot;alerjen içermiyor&quot;
+                      anlamına <strong>gelmez</strong>.
+                    </p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {sonuc.tespitEdilen.map((bulgu) => {
+                        const alerjen = ALLERGENS[bulgu.alerjenId];
+                        return (
+                          <li
+                            key={bulgu.alerjenId}
+                            className="overflow-hidden rounded-xl border border-red-200/80 bg-white shadow-sm"
+                          >
+                            <div className="flex items-center gap-2 border-b border-red-100 bg-red-50/70 px-5 py-3">
+                              <h3 className="font-medium text-red-950">
+                                {alerjen.ad}
+                              </h3>
+                              {alerjen.kapsam === "turkiye-ek" && (
+                                <AlerjenRozeti>Türkiye&apos;ye özel</AlerjenRozeti>
+                              )}
+                            </div>
+                            <ul className="divide-y divide-stone-100">
+                              {bulgu.kaynaklar.map((kaynak, index) => (
+                                <li
+                                  key={index}
+                                  className="flex items-baseline justify-between gap-4 px-5 py-2.5"
+                                >
+                                  <span className="font-mono text-sm text-stone-700">
+                                    {kaynak.satir}
+                                  </span>
+                                  <span className="shrink-0 rounded bg-red-50 px-2 py-0.5 font-mono text-xs text-red-700">
+                                    {kaynak.eslesenTerim}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </Bolum>
+
+                {sonuc.belirsiz.length > 0 && (
+                  <Bolum
+                    baslik="Netleştirilmesi gerekenler"
+                    sayi={sonuc.belirsiz.length}
+                    aciklama="Bu içerikler tek başına hangi alerjene girdiğini söylemiyor. Tahmin etmiyoruz."
+                  >
+                    <ul className="space-y-3">
+                      {sonuc.belirsiz.map((bulgu, index) => (
+                        <li
+                          key={index}
+                          className="rounded-xl border border-amber-200/80 bg-white p-5 shadow-sm"
+                        >
+                          <p className="font-mono text-sm text-stone-800">
+                            {bulgu.satir}
+                          </p>
+                          <p className="mt-2 text-sm text-amber-900">
+                            {bulgu.soru}
+                          </p>
+                          {bulgu.olasiAlerjenler.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {bulgu.olasiAlerjenler.map((id) => (
+                                <AlerjenRozeti key={id}>
+                                  {ALLERGENS[id].ad}
+                                </AlerjenRozeti>
+                              ))}
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </Bolum>
+                )}
+
+                {sonuc.taninmayan.length > 0 && (
+                  <Bolum
+                    baslik="Tanınmayan içerikler"
+                    sayi={sonuc.taninmayan.length}
+                    aciklama="Sözlüğümüzde yoklar. Alerjen içermedikleri anlamına gelmez — elle kontrol edin."
+                  >
+                    <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
+                      {sonuc.taninmayan.map((satir, index) => (
+                        <li
+                          key={index}
+                          className="px-5 py-2.5 font-mono text-sm text-stone-600"
+                        >
+                          {satir}
+                        </li>
+                      ))}
+                    </ul>
+                  </Bolum>
+                )}
+
+                {sonuc.beyanEdilenYok.length > 0 && (
+                  <Bolum
+                    baslik="Yokluk beyanı olarak okunanlar"
+                    aciklama="Metinde açıkça bulunmadığı belirtilen alerjenler."
+                  >
+                    <ul className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white shadow-sm">
+                      {sonuc.beyanEdilenYok.map((bulgu, index) => (
+                        <li
+                          key={index}
+                          className="flex items-baseline justify-between gap-4 px-5 py-2.5"
+                        >
+                          <span className="font-mono text-sm text-stone-600">
+                            {bulgu.satir}
+                          </span>
+                          <span className="shrink-0 text-xs text-stone-500">
+                            {ALLERGENS[bulgu.alerjenId].ad} bildirilmedi
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Bolum>
+                )}
+              </div>
+            )}
+          </section>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <footer className="mt-16 border-t border-stone-200 pt-6">
+          <p className="max-w-3xl text-xs leading-relaxed text-stone-500">
+            <strong className="text-stone-700">
+              Bu araç bir onay belgesi değildir.
+            </strong>{" "}
+            Sonuçlar reçete metnindeki kelimelere dayanır; tedarikçi
+            bileşimlerini, üretim hattındaki çapraz bulaşmayı veya etiket dışı
+            içerikleri göremez. Nihai alerjen bildiriminin doğruluğundan yasal
+            olarak işletme sorumludur.
+          </p>
+        </footer>
       </main>
     </div>
   );
