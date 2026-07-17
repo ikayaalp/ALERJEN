@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fbf7f0;
-  --foreground: #16211a;
+  --background: #f6f9f4;
+  --foreground: #13221a;
 }
 
 @theme inline {
@@ -12,17 +12,29 @@
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-fraunces);
 
-  /* Mutfak paleti: krem kağıt, zeytin, kırmızıbiber, safran */
-  --color-krem: #fbf7f0;
-  --color-kum: #f0e7d6;
-  --color-kagit: #fffdf8;
-  --color-murekkep: #16211a;
-  --color-zeytin: #33402f;
-  --color-zeytin-acik: #5c6b52;
-  --color-biber: #b4441f;
-  --color-biber-acik: #d9663f;
-  --color-safran: #d9a441;
-  --color-safran-acik: #f0cf8a;
+  /* Mutfak paleti: çam yeşili ana renk, altın ikincil, kiremit uyarı.
+     Değişken adları (biber) kod genelinde marka rengini temsil eder; değeri
+     artık yeşildir. Alerjen uyarı kartları ayrı 'uyari' rengini kullanır. */
+  --color-krem: #f6f9f4;
+  --color-kum: #e6efe3;
+  --color-kagit: #ffffff;
+  --color-murekkep: #13221a;
+
+  /* Marka: çam yeşili */
+  --color-biber: #14654a;
+  --color-biber-acik: #1c8060;
+
+  /* İkincil metin — sıcak yeşil-gri */
+  --color-zeytin: #38493d;
+  --color-zeytin-acik: #5f7167;
+
+  /* İkincil vurgu — altın/safran */
+  --color-safran: #c99a3a;
+  --color-safran-acik: #e8ce8a;
+
+  /* Alerjen uyarısı — kiremit kırmızısı (dikkat rengi, marka renginden ayrı) */
+  --color-uyari: #b23a2b;
+  --color-uyari-acik: #d16a54;
 }
 
 /* Açık temada sabit: alerjen uyarılarının kırmızı/safran kodlaması koyu

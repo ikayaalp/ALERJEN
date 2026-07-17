@@ -133,7 +133,7 @@ export default function AnaSayfa() {
                       Alerjen raporu
                     </p>
                   </div>
-                  <span className="rounded bg-biber px-2.5 py-1 text-xs font-medium text-krem">
+                  <span className="rounded bg-uyari px-2.5 py-1 text-xs font-medium text-krem">
                     4 alerjen
                   </span>
                 </div>
@@ -147,7 +147,7 @@ export default function AnaSayfa() {
                   ].map(([alerjen, kaynak]) => (
                     <li
                       key={alerjen}
-                      className="flex items-baseline justify-between gap-4 border-l-2 border-biber bg-biber/[0.04] py-2.5 pl-3.5 pr-2"
+                      className="flex items-baseline justify-between gap-4 border-l-2 border-uyari bg-uyari/[0.05] py-2.5 pl-3.5 pr-2"
                     >
                       <span className="text-sm font-medium text-murekkep">
                         {alerjen}

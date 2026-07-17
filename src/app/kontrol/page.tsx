@@ -93,7 +93,7 @@ export default function KontrolSayfasi() {
                   <p className="text-sm text-murekkep">
                     {inceleme ? (
                       <>
-                        <strong className="text-biber">
+                        <strong className="text-uyari">
                           Rapor tamamlanmadı.
                         </strong>{" "}
                         {acikNoktaSayisi} madde netleştirilmeli. Bunlar
@@ -126,9 +126,9 @@ export default function KontrolSayfasi() {
                         return (
                           <li
                             key={bulgu.alerjenId}
-                            className="overflow-hidden rounded-lg border border-biber/25 bg-kagit shadow-sm"
+                            className="overflow-hidden rounded-lg border border-uyari/25 bg-kagit shadow-sm"
                           >
-                            <div className="flex items-center gap-2 border-b border-biber/15 bg-biber/[0.06] px-5 py-3">
+                            <div className="flex items-center gap-2 border-b border-uyari/15 bg-uyari/[0.06] px-5 py-3">
                               <h3 className="font-medium text-murekkep">
                                 {alerjen.ad}
                               </h3>
@@ -145,7 +145,7 @@ export default function KontrolSayfasi() {
                                   <span className="font-mono text-sm text-zeytin">
                                     {kaynak.satir}
                                   </span>
-                                  <span className="shrink-0 rounded bg-biber/[0.08] px-2 py-0.5 font-mono text-xs text-biber">
+                                  <span className="shrink-0 rounded bg-uyari/[0.08] px-2 py-0.5 font-mono text-xs text-uyari">
                                     {kaynak.eslesenTerim}
                                   </span>
                                 </li>
