@@ -18,7 +18,50 @@ const ORNEK_RECETE = `500 g buğday unu
 200 g kıyma
 1 tatlı kaşığı tuz`;
 
+function MenuCiktisi({ sonuc }: { sonuc: any }) {
+  if (incelemeGerekiyorMu(sonuc)) {
+    return (
+      <div className="rounded-lg border border-safran/40 bg-safran/10 p-5 mb-6">
+        <h3 className="font-semibold text-murekkep mb-2">Yasal Menü Çıktısı Hazır Değil</h3>
+        <p className="text-sm text-uyari">
+          Aşağıda <strong>"Netleştirilmesi Gerekenler"</strong> olarak belirtilen içerikleri reçetenizde daha açık yazmalısınız (örneğin "yağ" yerine "tereyağı" veya "ayçiçek yağı"). Belirsizlikler varken yasal çıktı oluşturulamaz.
+        </p>
+      </div>
+    );
+  }
+
+  const alerjenler = sonuc.tespitEdilen.map((b: any) => ALLERGENS[b.alerjenId as keyof typeof ALLERGENS].ad).join(", ");
+  const etKokenleri = sonuc.etKokenleri.map((b: any) => ET_KOKENLERI[b.kokenId as keyof typeof ET_KOKENLERI].ad).join(", ");
+
+  let metin = [];
+  if (alerjenler) metin.push(`Alerjen Uyarısı: ${alerjenler} içerir.`);
+  if (etKokenleri) metin.push(`Et Menşei: ${etKokenleri}.`);
+
+  const nihaiMetin = metin.length > 0 
+    ? metin.join(" ") 
+    : "Bu üründe bildirimi zorunlu herhangi bir alerjen veya et kökeni bulunmamaktadır.";
+
+  return (
+    <div className="rounded-lg border-2 border-zeytin/40 bg-zeytin/5 p-6 mb-8 shadow-sm">
+      <h3 className="text-sm font-bold text-zeytin uppercase tracking-wider mb-3">Menüde Yazması Gereken Metin</h3>
+      <div className="bg-kagit rounded border border-murekkep/10 p-4 relative group">
+        <p className="font-mono text-base text-murekkep select-all">{nihaiMetin}</p>
+        <button 
+          onClick={() => navigator.clipboard.writeText(nihaiMetin)}
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-zeytin text-krem text-xs px-2 py-1 rounded"
+        >
+          Kopyala
+        </button>
+      </div>
+      <p className="mt-3 text-xs text-zeytin-acik">
+        Bu metni doğrudan kopyalayıp matbaaya veya QR menü sisteminize verebilirsiniz. Reçeteniz arşivinize kaydedilmiştir.
+      </p>
+    </div>
+  );
+}
+
 export default function KontrolSayfasi() {
+  const [ad, setAd] = useState("");
   const [recete, setRecete] = useState("");
   const [sonuc, setSonuc] = useState<any | null>(null);
   const [yukleniyor, setYukleniyor] = useState(false);
@@ -54,7 +97,7 @@ export default function KontrolSayfasi() {
       const res = await fetch("/api/analiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recete }),
+        body: JSON.stringify({ recete, ad: ad.trim() || "İsimsiz Reçete" }),
       });
       const data = await res.json();
       
@@ -64,7 +107,6 @@ export default function KontrolSayfasi() {
         setSonuc(data.sonuc);
         setKalanKredi(data.yeniBakiye);
         
-        // Custom event for SiteHeader to update its own credit display if they listen
         window.dispatchEvent(new Event("kredi_guncellendi"));
       }
     } catch (err) {
@@ -76,21 +118,19 @@ export default function KontrolSayfasi() {
 
   const bosMu = recete.trim().length === 0;
   const inceleme = sonuc ? incelemeGerekiyorMu(sonuc) : false;
-  const acikNoktaSayisi = sonuc ? sonuc.belirsiz.length + sonuc.taninmayan.length : 0;
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full flex flex-col">
       <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
+      <main className="mx-auto max-w-6xl px-6 py-10 flex-1 w-full">
         <section className="mb-10 max-w-2xl flex flex-col items-start gap-4">
           <div>
             <h1 className="font-display text-3xl tracking-tight text-murekkep sm:text-4xl">
               Reçete kontrolü
             </h1>
             <p className="mt-2 text-zeytin-acik">
-              Her bulgunun hangi içerikten geldiğini gösteririz. Emin olmadığımız
-              yerde tahmin yürütmez, size sorarız.
+              Reçetenizi girin, mevzuata uygun menü metnini anında alın ve arşivinize kaydedin.
             </p>
           </div>
           {kalanKredi !== null && (
@@ -103,44 +143,60 @@ export default function KontrolSayfasi() {
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start">
           <section className="lg:sticky lg:top-24">
-            <div className="rounded-lg border border-murekkep/10 bg-kagit p-5 shadow-sm">
-              <div className="mb-3 flex items-baseline justify-between">
-                <label
-                  htmlFor="recete"
-                  className="text-sm font-medium text-murekkep"
-                >
-                  Reçete
+            <div className="rounded-lg border border-murekkep/10 bg-kagit p-5 shadow-sm flex flex-col gap-4">
+              <div>
+                <label htmlFor="ad" className="text-sm font-medium text-murekkep mb-1.5 block">
+                  Reçete Adı
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setRecete(ORNEK_RECETE)}
-                  className="text-xs text-zeytin-acik underline underline-offset-4 transition hover:text-biber"
-                >
-                  Örnek yükle
-                </button>
+                <input
+                  id="ad"
+                  type="text"
+                  value={ad}
+                  onChange={(e) => setAd(e.target.value)}
+                  placeholder="Örn: Fındıklı Kek"
+                  className="w-full rounded-lg border border-murekkep/10 bg-krem/60 px-4 py-2.5 text-sm text-murekkep outline-none transition focus:border-biber/40 focus:bg-kagit focus:ring-4 focus:ring-biber/10"
+                />
               </div>
-              <textarea
-                id="recete"
-                value={recete}
-                onChange={(olay) => {
-                  setRecete(olay.target.value);
-                  setSonuc(null);
-                }}
-                rows={14}
-                spellCheck={false}
-                placeholder={"500 g buğday unu\n200 ml süt\n3 yumurta"}
-                className="w-full resize-none rounded-lg border border-murekkep/10 bg-krem/60 p-4 font-mono text-sm leading-relaxed text-murekkep outline-none transition placeholder:text-zeytin-acik/60 focus:border-biber/40 focus:bg-kagit focus:ring-4 focus:ring-biber/10"
-              />
-              <p className="mt-3 text-xs text-zeytin-acik mb-4">
-                Satır başına bir içerik yazın. `#` ile başlayan satırlar not sayılır.
-              </p>
+
+              <div>
+                <div className="mb-1.5 flex items-baseline justify-between">
+                  <label htmlFor="recete" className="text-sm font-medium text-murekkep">
+                    İçerikler
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAd("Örnek Reçete");
+                      setRecete(ORNEK_RECETE);
+                    }}
+                    className="text-xs text-zeytin-acik underline underline-offset-4 transition hover:text-biber"
+                  >
+                    Örnek yükle
+                  </button>
+                </div>
+                <textarea
+                  id="recete"
+                  value={recete}
+                  onChange={(olay) => {
+                    setRecete(olay.target.value);
+                    setSonuc(null);
+                  }}
+                  rows={14}
+                  spellCheck={false}
+                  placeholder={"500 g buğday unu\n200 ml süt\n3 yumurta"}
+                  className="w-full resize-none rounded-lg border border-murekkep/10 bg-krem/60 p-4 font-mono text-sm leading-relaxed text-murekkep outline-none transition placeholder:text-zeytin-acik/60 focus:border-biber/40 focus:bg-kagit focus:ring-4 focus:ring-biber/10"
+                />
+                <p className="mt-2 text-xs text-zeytin-acik">
+                  Satır başına bir içerik yazın. `#` ile başlayan satırlar not sayılır.
+                </p>
+              </div>
               
               <button
                 onClick={analizEt}
                 disabled={bosMu || yukleniyor}
-                className="w-full rounded-lg bg-murekkep px-4 py-3 text-sm font-medium text-krem transition hover:bg-zeytin disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-lg bg-murekkep px-4 py-3 text-sm font-medium text-krem transition hover:bg-zeytin disabled:opacity-50 disabled:cursor-not-allowed mt-2"
               >
-                {yukleniyor ? "Analiz ediliyor..." : "Analiz Et (1 kredi)"}
+                {yukleniyor ? "Analiz ediliyor..." : "Analiz Et ve Kaydet (1 Kredi)"}
               </button>
             </div>
           </section>
@@ -158,50 +214,25 @@ export default function KontrolSayfasi() {
             )}
 
             {!sonuc && !hata && !yukleniyor && (
-              <div className="rounded-lg border border-dashed border-murekkep/20 bg-kagit/50 p-12 text-center">
-                <p className="text-sm text-zeytin-acik">
-                  Reçetenizi yazıp &quot;Analiz Et&quot; butonuna bastığınızda raporunuz burada görünecektir.
+              <div className="rounded-lg border border-dashed border-murekkep/20 bg-kagit/50 p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
+                <p className="text-sm text-zeytin-acik max-w-sm">
+                  Reçetenizi yazıp <strong>Analiz Et ve Kaydet</strong> butonuna bastığınızda, menünüzde kullanmanız gereken yasal uyarı metni burada oluşacaktır.
                 </p>
               </div>
             )}
 
             {yukleniyor && (
-              <div className="rounded-lg border border-dashed border-murekkep/20 bg-kagit/50 p-12 text-center flex flex-col items-center gap-4">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-biber border-t-transparent" />
-                <p className="text-sm text-zeytin-acik">
-                  Reçete taranıyor...
+              <div className="rounded-lg border border-dashed border-murekkep/20 bg-kagit/50 p-12 text-center flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-biber border-t-transparent" />
+                <p className="text-sm font-medium text-zeytin-acik">
+                  Reçete taranıyor ve yasal metin oluşturuluyor...
                 </p>
               </div>
             )}
 
             {sonuc && !yukleniyor && (
-              <div className="space-y-6">
-                <div
-                  className={`rounded-lg border p-5 ${
-                    inceleme
-                      ? "border-safran/40 bg-safran/10"
-                      : "border-zeytin/25 bg-zeytin/[0.07]"
-                  }`}
-                >
-                  <p className="text-sm text-murekkep">
-                    {inceleme ? (
-                      <>
-                        <strong className="text-uyari">
-                          Rapor tamamlanmadı.
-                        </strong>{" "}
-                        {acikNoktaSayisi} madde netleştirilmeli. Bunlar
-                        çözülmeden rapor kullanılamaz.
-                      </>
-                    ) : (
-                      <>
-                        <strong className="text-zeytin">
-                          Tüm içerikler tanındı.
-                        </strong>{" "}
-                        Yine de bir gıda sorumlusunun onaylaması gerekir.
-                      </>
-                    )}
-                  </p>
-                </div>
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <MenuCiktisi sonuc={sonuc} />
 
                 <Bolum
                   baslik="Tespit edilen alerjenler"
@@ -401,16 +432,6 @@ export default function KontrolSayfasi() {
             )}
           </section>
         </div>
-
-        <p className="mt-16 max-w-3xl border-t border-murekkep/10 pt-6 text-xs leading-relaxed text-zeytin-acik">
-          <strong className="text-zeytin">
-            Bu araç bir onay belgesi değildir.
-          </strong>{" "}
-          Sonuçlar reçete metnindeki kelimelere dayanır; tedarikçi
-          bileşimlerini, üretim hattındaki çapraz bulaşmayı veya etiket dışı
-          içerikleri göremez. Nihai alerjen ve et kökeni bildiriminin
-          doğruluğundan yasal olarak işletme sorumludur.
-        </p>
       </main>
 
       <SiteFooter />

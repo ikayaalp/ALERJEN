@@ -18,6 +18,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const recete = body.recete;
+    const ad = body.ad || "İsimsiz Reçete";
 
     if (!recete || typeof recete !== "string" || recete.trim().length === 0) {
       return NextResponse.json(
@@ -41,10 +42,28 @@ export async function POST(request: Request) {
     // 3. Analizi calistir
     const sonuc = alerjenTespitEt(recete);
 
-    // 4. Sonuclari don
+    // 4. Veritabanina kaydet
+    const { data: kayitData, error: dbError } = await supabase
+      .from("receteler")
+      .insert({
+        kullanici_id: user.id,
+        ad: ad,
+        icerik: recete,
+        analiz_sonucu: sonuc
+      })
+      .select("id")
+      .single();
+
+    if (dbError) {
+      console.error("Reçete kaydedilemedi:", dbError);
+      // We don't fail the request here, but it's an issue.
+    }
+
+    // 5. Sonuclari don
     return NextResponse.json({
       sonuc,
-      yeniBakiye
+      yeniBakiye,
+      kayitId: kayitData?.id
     });
 
   } catch (error: any) {

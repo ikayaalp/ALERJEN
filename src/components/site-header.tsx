@@ -68,22 +68,25 @@ export function SiteHeader() {
         <div className="flex items-center gap-4">
           {!yukleniyor && (
             userEmail ? (
-              <>
-                <div className="hidden flex-col items-end sm:flex">
-                  <span className="text-xs text-zeytin-acik">{userEmail}</span>
-                  <span className="text-sm font-medium text-zeytin">
-                    {bakiye} Kredi
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-4 text-sm font-medium text-murekkep">
+                  <Link href="/arsiv" className="hover:text-zeytin transition">
+                    Arşivim
+                  </Link>
+                  <span>{userEmail}</span>
+                  <span className="flex items-center gap-1.5 rounded-full bg-zeytin/10 px-3 py-1 text-zeytin">
+                    Kredi: <strong className="font-mono">{yukleniyor ? "..." : bakiye}</strong>
                   </span>
                 </div>
                 <form action={cikisYap}>
                   <button
                     type="submit"
-                    className="rounded-lg px-3.5 py-2 text-sm text-zeytin transition hover:bg-kum"
+                    className="text-sm font-medium text-biber hover:underline underline-offset-4"
                   >
-                    Çıkış yap
+                    Çıkış Yap
                   </button>
                 </form>
-              </>
+              </div>
             ) : (
               <>
                 <Link
